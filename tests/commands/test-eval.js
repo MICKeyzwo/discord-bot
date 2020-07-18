@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-const Eval = require('../lib/commands/eval');
+const Eval = require('../../lib/commands/eval');
 
 const instance = new Eval();
 
