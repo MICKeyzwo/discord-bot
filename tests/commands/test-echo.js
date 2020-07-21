@@ -4,4 +4,4 @@ const Echo = require('../../lib/commands/echo');
 
 const instance = new Echo();
 
-assert(instance.exec('hello'), 'hello');
+assert.equal(instance.exec('hello'), 'hello');

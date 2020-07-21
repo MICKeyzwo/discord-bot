@@ -4,4 +4,4 @@ const Ping = require('../../lib/commands/ping');
 
 const instance = new Ping();
 
-assert(instance.exec(), 'pong!');
+assert.equal(instance.exec(), 'pong!');
