@@ -16,6 +16,10 @@ console.log(instance.hasStraight([
     {number: 4}, {number: 4}, {number: 5}, {number: 6}, {number: 7}
 ]));
 
+console.log(instance.hasStraight([
+    {number: 1}, {number: 2}, {number: 3}, {number: 4}, {number: 12}
+]));
+
 console.log(instance.hasFlush([
     {suit: 'S'}, {suit: 'S'}, {suit: 'S'}, {suit: 'S'}, {suit: 'S'}
 ]));
