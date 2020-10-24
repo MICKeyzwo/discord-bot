@@ -8,4 +8,8 @@ const instance = new SearchImage();
 
     console.log(await instance.exec('現場猫'));
 
+    console.log(await instance.exec('コロンビア'));
+
+    console.log(await instance.exec('争いは同じレベル'));
+
 })();
