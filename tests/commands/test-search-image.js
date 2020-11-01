@@ -12,6 +12,6 @@ const instance = new SearchImage();
 
     console.log(await instance.exec('争いは同じレベル'));
 
-    console.log(await instance.exec('tsurutaaaaaa_', 'ガッキー'))
+    console.log(await instance.exec('tsurutaaaaaa_', 'ガッキー'));
 
 })();
