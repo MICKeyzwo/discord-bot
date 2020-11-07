@@ -14,4 +14,6 @@ const instance = new SearchImage();
 
     console.log(await instance.exec('tsurutaaaaaa_', 'ガッキー'));
 
+    console.log(await instance.exec('tsurutaaaaaa_', '結婚'));
+
 })();
