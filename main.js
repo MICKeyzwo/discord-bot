@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 
 require('dotenv').config();
 const getBotClient = require('./lib/get-bot-client');
