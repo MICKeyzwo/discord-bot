@@ -1,10 +1,30 @@
 const assert = require('assert');
 
 const {
+    parseMessage,
     objectToQueryString,
     getLevenshteinSimilarity,
     getOptionsMessage,
 } = require('../lib/bot-utils');
+
+const poker = parseMessage(`!bot poker`);
+assert.equal(poker.commandName, 'poker');
+assert.equal(poker.args.length, 0);
+const echo = parseMessage(`!bot echo hoge "fuga"   '"piyo"'`);
+assert.equal(echo.commandName, 'echo');
+assert.equal(echo.args.length, 3);
+assert.equal(echo.args[0], 'hoge');
+assert.equal(echo.args[1], 'fuga');
+assert.equal(echo.args[2], '"piyo"');
+const shuffle = parseMessage(`!bot  shuffle    hoge "fu
+ga" foo
+bar`);
+assert.equal(shuffle.commandName, 'shuffle');
+assert.equal(shuffle.args.length, 4);
+assert.equal(shuffle.args[0], 'hoge');
+assert.equal(shuffle.args[1], 'fu\nga');
+assert.equal(shuffle.args[2], 'foo');
+assert.equal(shuffle.args[3], 'bar');
 
 assert.equal(objectToQueryString({hoge: 'fuga', foo: 'bar'}), '?hoge=fuga&foo=bar');
 
