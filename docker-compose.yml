@@ -2,6 +2,7 @@ version: '3'
 
 services:
   discord-bot:
+    restart: always
     build: .
     environment:
       - TZ=Asia/Tokyo
