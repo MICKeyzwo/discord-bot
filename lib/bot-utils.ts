@@ -1,4 +1,4 @@
-import { prefix } from '../config.json';
+import { prefix } from '../config';
 
 /**
  * 受け取ったメッセージからコマンド名と引数列を取り出す

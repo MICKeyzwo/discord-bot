@@ -1,7 +1,7 @@
 import Discord from 'discord.js';
-require('discord-reply');
+import DiscordReply from 'discord-reply';
 
-import { prefix } from '../config.json';
+import { prefix } from '../config';
 import { getCommandMap } from './get-commands';
 import { parseMessage } from './bot-utils';
 import {

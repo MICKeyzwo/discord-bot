@@ -43,5 +43,3 @@ export default class WhatToday extends CommandBase {
         return lis[randomInt(lis.length)];
     }
 }
-
-module.exports = WhatToday;

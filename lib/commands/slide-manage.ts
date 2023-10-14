@@ -93,5 +93,3 @@ export default class SlideManage extends CommandBase {
         }
     }
 }
-
-module.exports = SlideManage;
