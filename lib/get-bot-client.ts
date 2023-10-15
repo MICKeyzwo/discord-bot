@@ -1,5 +1,5 @@
 import Discord from 'discord.js';
-import DiscordReply from 'discord-reply';
+import 'discord-reply';
 
 import { prefix } from '../config';
 import { getCommandMap } from './get-commands';
