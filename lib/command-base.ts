@@ -1,3 +1,9 @@
+export type CommandReturnWithEditor = {
+    message: string;
+    messageEditor: (editMessage: (content: string) => Promise<void>) => any | Promise<any>;
+};
+export type CommandReturn = string | CommandReturnWithEditor;
+
 /**
  * コマンドの基底クラス
  */
@@ -11,5 +17,5 @@ export abstract class CommandBase {
     /**
      * 関数の実装部
      */
-    abstract exec(...args: string[]): string | Promise<string>;
+    abstract exec(...args: string[]): CommandReturn | Promise<CommandReturn>;
 }

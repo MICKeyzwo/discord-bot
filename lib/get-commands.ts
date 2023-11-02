@@ -15,7 +15,7 @@ const COMMANDS_DIR = `${__dirname}/commands`;
 export async function getCommandMap() {
     const files = fs.readdirSync(COMMANDS_DIR);
     const tsFiles = files.filter(file => file.endsWith('.ts'));
-    const commandMap = new Map();
+    const commandMap = new Map<string, CommandBase>();
     for (const file of tsFiles) {
         const Clas = await import(`${COMMANDS_DIR}/${file}`);
         const command = new Clas.default();
