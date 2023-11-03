@@ -3,7 +3,7 @@ import { CommandBase, type CommandHandler } from "../command-base";
 /**
  * タイマー機能
  */
-export default class Text2Image extends CommandBase {
+export default class Timer extends CommandBase {
   constructor() {
     super();
     this.name = "timer";
