@@ -11,7 +11,7 @@ import {
     getBlankMessage,
     getNoCommandMessage
 } from './messages';
-import type { CommandContext } from './command-base';
+import type { CommandContext, CommandHandler } from './command-base';
 
 
 const { BOT_NAME } = process.env;
@@ -20,6 +20,29 @@ type DiscordReplyMessage = Discord.Message & {
     lineReplyNoMention(message: string): Promise<Discord.Message>;
 };
 
+async function handleCommandResponse(
+    replyMessage: DiscordReplyMessage,
+    response: CommandHandler,
+    args: string[]
+) {
+    let messageEditor: (content: string) => Promise<void> | undefined;
+    const editMessage = async (content: string) => {
+        if (typeof messageEditor === "undefined") {
+            const msg = await replyMessage.lineReplyNoMention(content);
+            messageEditor = async (content: string) => {
+                await msg.edit(content);
+            };
+        } else {
+            await messageEditor(content);
+        }
+    };
+    const ctx: CommandContext = {
+        editMessage,
+        args,
+        user: { id: replyMessage.author.id, name: replyMessage.author.username },
+    };
+    await response(ctx);
+}
 
 /**
  * discord botのクライアントを生成する
@@ -51,23 +74,7 @@ export function getBotClient() {
                     if (typeof response === "string") {
                         await replyMessage.lineReplyNoMention(response);
                     } else if (typeof response === "function") {
-                        let messageEditor: (content: string) => Promise<void> | undefined;
-                        const editMessage = async (content: string) => {
-                            if (typeof messageEditor === "undefined") {
-                                const msg = await replyMessage.lineReplyNoMention(content);
-                                messageEditor = async (content: string) => {
-                                    await msg.edit(content);
-                                };
-                            } else {
-                                await messageEditor(content);
-                            }
-                        }
-                        const ctx: CommandContext = {
-                            editMessage,
-                            args,
-                            user: { id: author.id, name: author.username },
-                        };
-                        await response(ctx);
+                        await handleCommandResponse(replyMessage, response, args);
                     } else {
                         replyMessage.lineReplyNoMention(executionErrorMessage);
                     }
