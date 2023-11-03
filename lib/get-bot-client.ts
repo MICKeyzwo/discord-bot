@@ -47,15 +47,17 @@ export function getBotClient() {
             } else if (commandMap.has(commandName)) {
                 const command = commandMap.get(commandName)!;
                 try {
-                    const commandReturn = await command.exec(...args);
-                    if (typeof commandReturn === "string") {
-                        await replyMessage.lineReplyNoMention(commandReturn);
-                    } else if (typeof commandReturn === "function") {
+                    const response = await command.exec(...args);
+                    if (typeof response === "string") {
+                        await replyMessage.lineReplyNoMention(response);
+                    } else if (typeof response === "function") {
                         let messageEditor: (content: string) => Promise<void> | undefined;
                         const editMessage = async (content: string) => {
                             if (typeof messageEditor === "undefined") {
                                 const msg = await replyMessage.lineReplyNoMention(content);
-                                messageEditor = (content: string) => msg.edit(content).then(undefined);
+                                messageEditor = async (content: string) => {
+                                    await msg.edit(content);
+                                };
                             } else {
                                 await messageEditor(content);
                             }
@@ -65,7 +67,7 @@ export function getBotClient() {
                             args,
                             user: { id: author.id, name: author.username },
                         };
-                        await commandReturn(ctx);
+                        await response(ctx);
                     } else {
                         replyMessage.lineReplyNoMention(executionErrorMessage);
                     }
