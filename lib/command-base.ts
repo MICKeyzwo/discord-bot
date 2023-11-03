@@ -1,3 +1,11 @@
+export type CommandContext = {
+    editMessage: (content: string) => Promise<void>;
+    args: string[];
+    user: { id: string, name: string };
+};
+export type CommandHandler = (ctx: CommandContext) => void | Promise<void>;
+export type CommandResponse = string | CommandHandler;
+
 /**
  * コマンドの基底クラス
  */
@@ -11,5 +19,5 @@ export abstract class CommandBase {
     /**
      * 関数の実装部
      */
-    abstract exec(...args: string[]): string | Promise<string>;
+    abstract exec(...args: string[]): CommandResponse | Promise<CommandResponse>;
 }
