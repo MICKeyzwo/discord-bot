@@ -1,8 +1,10 @@
-export type CommandReturnWithEditor = {
-    message: string;
-    messageEditor: (editMessage: (content: string) => Promise<void>) => any | Promise<any>;
+export type CommandContext = {
+    editMessage: (content: string) => Promise<void>;
+    args: string[];
+    user: { id: string, name: string };
 };
-export type CommandReturn = string | CommandReturnWithEditor;
+export type CommandHandler = (ctx: CommandContext) => void | Promise<void>;
+export type CommandReturn = string | CommandHandler;
 
 /**
  * コマンドの基底クラス

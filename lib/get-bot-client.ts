@@ -11,6 +11,7 @@ import {
     getBlankMessage,
     getNoCommandMessage
 } from './messages';
+import type { CommandContext } from './command-base';
 
 
 const { BOT_NAME } = process.env;
@@ -46,14 +47,27 @@ export function getBotClient() {
             } else if (commandMap.has(commandName)) {
                 const command = commandMap.get(commandName)!;
                 try {
-                    const result = await command.exec(...args);
-                    if (typeof result === "string") {
-                        await replyMessage.lineReplyNoMention(result);
+                    const commandReturn = await command.exec(...args);
+                    if (typeof commandReturn === "string") {
+                        await replyMessage.lineReplyNoMention(commandReturn);
+                    } else if (typeof commandReturn === "function") {
+                        let messageEditor: (content: string) => Promise<void> | undefined;
+                        const editMessage = async (content: string) => {
+                            if (typeof messageEditor === "undefined") {
+                                const msg = await replyMessage.lineReplyNoMention(content);
+                                messageEditor = (content: string) => msg.edit(content).then(undefined);
+                            } else {
+                                await messageEditor(content);
+                            }
+                        }
+                        const ctx: CommandContext = {
+                            editMessage,
+                            args,
+                            user: { id: author.id, name: author.username },
+                        };
+                        await commandReturn(ctx);
                     } else {
-                        const { message, messageEditor } = result;
-                        await replyMessage
-                          .lineReplyNoMention(message)
-                          .then((msg) => messageEditor((content) => msg.edit(content).then(undefined)));
+                        replyMessage.lineReplyNoMention(executionErrorMessage);
                     }
                 } catch (error) {
                     replyMessage.lineReplyNoMention(executionErrorMessage);
