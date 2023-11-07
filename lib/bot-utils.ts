@@ -64,6 +64,20 @@ export function randomInt(n: number) {
 }
 
 /**
+ * 長さが0の場合にtrueを返す
+ */
+export function isEmpty(seq: { length: number }) {
+    return seq.length === 0;
+}
+
+/**
+ * 配列から1要素をランダムに取り出す
+ */
+export function pickUpRandom<T>(items: T[]) {
+    return items[randomInt(items.length)];
+}
+
+/**
  * 関数のメモ化関数
  */
 export function IdiotCache<T extends Function>(f: T) {
