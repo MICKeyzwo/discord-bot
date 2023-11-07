@@ -41,41 +41,45 @@ export default class Poker extends CommandBase {
             } else {
                 cards = PlayingCard.pickRandomCards(5);
             }
-            const sortedCards = PlayingCard.sortPlayingCards(cards);
-            const pairs = this.countSameCards(sortedCards, 2);
-            const threeCards = Boolean(this.countSameCards(sortedCards, 3));
-            const fourCards = Boolean(this.countSameCards(sortedCards, 4));
-            const fullHouse = pairs === 1 && threeCards;
-            const flush = this.hasFlush(sortedCards);
-            const straight = this.hasStraight(sortedCards);
-            if (straight && sortedCards[0].number === 0) {
-                const cardOne = sortedCards.pop()!;
-                sortedCards.unshift(cardOne);
-            }
-            const message = (() => {
-                if (straight && flush && sortedCards[0].number === 8) {
-                    return '**Wow!! It\'s Royal Straight Flush!!!!**';
-                } else if (straight && flush) {
-                    return 'It\'s Straight Flush!!!';
-                } else if (fourCards) {
-                    return 'It\'s Four of a Kind!!';
-                } else if (fullHouse) {
-                    return 'It\'s Full House!!';
-                } else if (flush) {
-                    return 'It\'s Flush!';
-                } else if (straight) {
-                    return 'It\'s Straight!';
-                } else if (threeCards) {
-                    return 'It\'s Three of a Kind!';
-                } else if (pairs === 2) {
-                    return 'It\'s Two Pairs!';
-                } else if (pairs === 1) {
-                    return 'It\'s One Pair!';
-                }
-                return 'It\'s High cards...';
-            })();
-            await sendMessage(`${sortedCards.join('')} ${message}`);
+            await sendMessage(this.play(cards));
         };
+    }
+
+    play(cards: PlayingCard[]) {
+        const sortedCards = PlayingCard.sortPlayingCards(cards);
+        const pairs = this.countSameCards(sortedCards, 2);
+        const threeCards = Boolean(this.countSameCards(sortedCards, 3));
+        const fourCards = Boolean(this.countSameCards(sortedCards, 4));
+        const fullHouse = pairs === 1 && threeCards;
+        const flush = this.hasFlush(sortedCards);
+        const straight = this.hasStraight(sortedCards);
+        if (straight && sortedCards[0].number === 0) {
+            const cardOne = sortedCards.pop()!;
+            sortedCards.unshift(cardOne);
+        }
+        const message = (() => {
+            if (straight && flush && sortedCards[0].number === 8) {
+                return '**Wow!! It\'s Royal Straight Flush!!!!**';
+            } else if (straight && flush) {
+                return 'It\'s Straight Flush!!!';
+            } else if (fourCards) {
+                return 'It\'s Four of a Kind!!';
+            } else if (fullHouse) {
+                return 'It\'s Full House!!';
+            } else if (flush) {
+                return 'It\'s Flush!';
+            } else if (straight) {
+                return 'It\'s Straight!';
+            } else if (threeCards) {
+                return 'It\'s Three of a Kind!';
+            } else if (pairs === 2) {
+                return 'It\'s Two Pairs!';
+            } else if (pairs === 1) {
+                return 'It\'s One Pair!';
+            }
+            return 'It\'s High cards...';
+        })();
+        return `${sortedCards.join('')} ${message}`;
     }
 
     /**
