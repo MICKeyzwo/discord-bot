@@ -1,4 +1,4 @@
-import { CommandBase } from '../command-base';
+import { CommandBase, type CommandHandler } from '../command-base';
 import { randomInt } from '../bot-utils';
 
 
@@ -7,45 +7,75 @@ export default class Poker extends CommandBase {
     constructor() {
         super();
         this.name = 'poker';
-        this.description = '`poker`: play poker'
+        this.description = 
+            '`poker`: play poker\n' +
+            'subCommand:\n' +
+            '  reload [indexes] (max 4 indexes)\n' +
+            '  e.g. `!bot poker reload 0 2 4`';
     }
 
-    exec() {
-        const cards = PlayingCard.pickRandomCards(5);
-        const sortedCards = PlayingCard.sortPlayingCards(cards);
-        const pairs = this.countSameCards(sortedCards, 2);
-        const threeCards = Boolean(this.countSameCards(sortedCards, 3));
-        const fourCards = Boolean(this.countSameCards(sortedCards, 4));
-        const fullHouse = pairs === 1 && threeCards;
-        const flush = this.hasFlush(sortedCards);
-        const straight = this.hasStraight(sortedCards);
-        if (straight && sortedCards[0].number === 0) {
-            const cardOne = sortedCards.pop()!;
-            sortedCards.unshift(cardOne);
-        }
-        const message = (() => {
-            if (straight && flush && sortedCards[0].number === 8) {
-                return '**Wow!! It\'s Royal Straight Flush!!!!**';
-            } else if (straight && flush) {
-                return 'It\'s Straight Flush!!!';
-            } else if (fourCards) {
-                return 'It\'s Four of a Kind!!';
-            } else if (fullHouse) {
-                return 'It\'s Full House!!';
-            } else if (flush) {
-                return 'It\'s Flush!';
-            } else if (straight) {
-                return 'It\'s Straight!';
-            } else if (threeCards) {
-                return 'It\'s Three of a Kind!';
-            } else if (pairs === 2) {
-                return 'It\'s Two Pairs!';
-            } else if (pairs === 1) {
-                return 'It\'s One Pair!';
+    exec(): CommandHandler {
+        return async (sendMessage, ctx) => {
+            let cards: PlayingCard[];
+            if (ctx.args[0] === "reload" && ctx.referenceMessageID) {
+                const reloadTargets = ctx.args.slice(1).map((num) => parseInt(num, 10));
+                const msg = await ctx.getMessage(ctx.referenceMessageID);
+                const matchRes = msg?.content?.match(
+                    new RegExp(Array.from({length: 5}).map(() => "(\[:[a-z]+::[a-z_]+:\])").join(""))
+                );
+                if (
+                    !matchRes ||
+                    reloadTargets.length > 5 ||
+                    reloadTargets.length === 0 ||
+                    reloadTargets.some((n) => n < 0 || n > 4)
+                ) {
+                    return sendMessage("invalid reload request");
+                }
+                cards = [
+                    ...PlayingCard.pickRandomCards(reloadTargets.length),
+                    ...matchRes
+                        .slice(1)
+                        .filter((_, idx) => !reloadTargets.includes(idx))
+                        .map(PlayingCard.fromString),
+                ];
+            } else {
+                cards = PlayingCard.pickRandomCards(5);
             }
-            return 'It\'s High cards...';
-        })();
-        return `${sortedCards.join('')} ${message}`;
+            const sortedCards = PlayingCard.sortPlayingCards(cards);
+            const pairs = this.countSameCards(sortedCards, 2);
+            const threeCards = Boolean(this.countSameCards(sortedCards, 3));
+            const fourCards = Boolean(this.countSameCards(sortedCards, 4));
+            const fullHouse = pairs === 1 && threeCards;
+            const flush = this.hasFlush(sortedCards);
+            const straight = this.hasStraight(sortedCards);
+            if (straight && sortedCards[0].number === 0) {
+                const cardOne = sortedCards.pop()!;
+                sortedCards.unshift(cardOne);
+            }
+            const message = (() => {
+                if (straight && flush && sortedCards[0].number === 8) {
+                    return '**Wow!! It\'s Royal Straight Flush!!!!**';
+                } else if (straight && flush) {
+                    return 'It\'s Straight Flush!!!';
+                } else if (fourCards) {
+                    return 'It\'s Four of a Kind!!';
+                } else if (fullHouse) {
+                    return 'It\'s Full House!!';
+                } else if (flush) {
+                    return 'It\'s Flush!';
+                } else if (straight) {
+                    return 'It\'s Straight!';
+                } else if (threeCards) {
+                    return 'It\'s Three of a Kind!';
+                } else if (pairs === 2) {
+                    return 'It\'s Two Pairs!';
+                } else if (pairs === 1) {
+                    return 'It\'s One Pair!';
+                }
+                return 'It\'s High cards...';
+            })();
+            await sendMessage(`${sortedCards.join('')} ${message}`);
+        };
     }
 
     /**
@@ -90,12 +120,28 @@ export default class Poker extends CommandBase {
 
 /** トランプカードクラス */
 class PlayingCard {
-    suit: string;
-    number: number;
+    constructor(readonly suit: string, readonly number: number) {}
 
-    constructor(num: number) {
-        this.suit = PlayingCard.suits[Math.floor(num / 100)];
-        this.number = num % 100;
+    static createRandomCard(num: number): PlayingCard {
+        return new PlayingCard(
+            PlayingCard.suits[Math.floor(num / 100)],
+            num % 100
+        );
+    }
+
+    /**
+     * 表示用文字列から生成
+     */
+    static fromString(cardDisplayText: string): PlayingCard {
+        const matchRes = cardDisplayText.match(/\[(:[a-z]+:)(:[a-z_]+:)\]/);
+        if (!matchRes) {
+            throw new Error("invalid card display string");
+        }
+        const [_, suitText, numberText] = matchRes;
+        return new PlayingCard(
+            PlayingCard.suits[PlayingCard.displaySuits.indexOf(suitText)],
+            PlayingCard.displayNumbers.indexOf(numberText)
+        );
     }
 
     /**
@@ -145,7 +191,7 @@ class PlayingCard {
                 i--;
             }
         }
-        return nums.map(n => new PlayingCard(n));
+        return nums.map(n => PlayingCard.createRandomCard(n));
     }
 
     /**
