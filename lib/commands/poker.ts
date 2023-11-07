@@ -18,26 +18,29 @@ export default class Poker extends CommandBase {
         return async (sendMessage, ctx) => {
             let cards: PlayingCard[];
             if (ctx.args[0] === "reload" && ctx.referenceMessageID) {
-                const reloadTargets = ctx.args.slice(1).map((num) => parseInt(num, 10));
+                const reloadTargetIndexes = ctx.args.slice(1).map((num) => parseInt(num, 10));
                 const msg = await ctx.getMessage(ctx.referenceMessageID);
                 const matchRes = msg?.content?.match(
                     new RegExp(Array.from({length: 5}).map(() => "(\[:[a-z]+::[a-z_]+:\])").join(""))
                 );
                 if (
                     !matchRes ||
-                    reloadTargets.length > 5 ||
-                    reloadTargets.length === 0 ||
-                    reloadTargets.some((n) => n < 0 || n > 4)
+                    reloadTargetIndexes.length > 4 ||
+                    reloadTargetIndexes.length === 0 ||
+                    reloadTargetIndexes.some((n) => n < 0 || n > 4)
                 ) {
                     return sendMessage("invalid reload request");
                 }
-                cards = [
-                    ...PlayingCard.pickRandomCards(reloadTargets.length),
-                    ...matchRes
-                        .slice(1)
-                        .filter((_, idx) => !reloadTargets.includes(idx))
-                        .map(PlayingCard.fromString),
-                ];
+                const prevCards = matchRes.slice(1).map(PlayingCard.fromString);
+                const reloadTargets = prevCards.filter((_, idx) => reloadTargetIndexes.includes(idx));
+                cards = prevCards.filter((_, idx) => !reloadTargetIndexes.includes(idx));
+                for (const card of PlayingCard.pickRandomCards()) {
+                    if (cards.length === 5) {
+                        break;
+                    } else if (!reloadTargets.some((prevCard) => card.isSameCard(prevCard))) {
+                        cards.push(card);
+                    }
+                }
             } else {
                 cards = PlayingCard.pickRandomCards(5);
             }
@@ -160,6 +163,11 @@ class PlayingCard {
         );
     }
 
+    /** @returns 同じカードかどうか */
+    isSameCard(card: PlayingCard) {
+        return this.suit === card.suit && this.number === card.number;
+    }
+
     /**
      * スートの強さを数値で返す
      */
@@ -184,18 +192,28 @@ class PlayingCard {
 
     /** 
      * 指定された枚数のトランプをランダムに取得する
+     * 
+     * 枚数を指定しない場合は無限にトランプを生成する
      */
-    static pickRandomCards(len: number) {
-        const nums: number[] = [];
-        for (let i = 0; i < len; i++) {
-            const n = randomInt(4) * 100 + randomInt(13);
-            if (!nums.includes(n)) {
-                nums.push(n);
-            } else {
-                i--;
-            }
+    static pickRandomCards(len: number): PlayingCard[];
+    static pickRandomCards(): Iterable<PlayingCard>;
+    static pickRandomCards(len?: number) {
+        if (len === undefined) {
+            return (function*(): Iterable<PlayingCard> {
+                while (true) {
+                    const n = randomInt(4) * 100 + randomInt(13);
+                    yield PlayingCard.createRandomCard(n);
+                }
+            })()
         }
-        return nums.map(n => PlayingCard.createRandomCard(n));
+        const cards: PlayingCard[] = [];
+        for (const card of PlayingCard.pickRandomCards()) {
+            if (cards.length >= len) {
+                break;
+            }
+            cards.push(card);
+        }
+        return cards;
     }
 
     /**
