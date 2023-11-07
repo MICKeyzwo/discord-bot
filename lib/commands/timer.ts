@@ -11,19 +11,21 @@ export default class Timer extends CommandBase {
   }
 
   exec(): CommandHandler {
-    return async ({ args, editMessage }) => {
-      const target = parseFloat(args[0]);
+    return async (sendReplyMessage, ctx) => {
+      const target = parseFloat(ctx.args[0]);
       const startAt = Date.now();
+      const [updateReplyMessage] = await Promise.all([
+        sendReplyMessage(`${target} sec`).then(({ updateReplyMessage }) => updateReplyMessage),
+        new Promise<void>((resolve) => setTimeout(resolve, 1000)),
+      ]);
       while (true) {
-        const remainingTime = Math.round(
-          target - (Date.now() - startAt) / 1000
-        );
+        const remainingTime = Math.round(target - (Date.now() - startAt) / 1000);
         await Promise.all([
-          editMessage(`${Math.max(remainingTime, 0)} sec`),
+          updateReplyMessage(`${Math.max(remainingTime, 0)} sec`),
           new Promise<void>((resolve) => setTimeout(resolve, 1000)),
         ]);
         if (remainingTime <= 0) {
-          await editMessage("Done!");
+          await updateReplyMessage("Done!");
           break;
         }
       }

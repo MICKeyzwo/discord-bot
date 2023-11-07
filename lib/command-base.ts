@@ -1,9 +1,21 @@
-export type CommandContext = {
-    editMessage: (content: string) => Promise<void>;
-    args: string[];
-    user: { id: string, name: string };
+export type MessageProps = {
+    readonly user: { id: string, name: string };
+    readonly messageId: string, 
+    readonly referenceMessageID: string | null;
+    readonly content: string;
 };
-export type CommandHandler = (ctx: CommandContext) => void | Promise<void>;
+export type CommandContext = MessageProps & {
+    readonly args: string[];
+    readonly getMessage: (messageId: string) => Promise<MessageProps | undefined>;
+};
+export type ReplyMessageProps = {
+    updateReplyMessage: (content: string) => Promise<void>;
+    replyMessageId: string;
+};
+export type CommandHandler = (
+    sendReplyMessage: (content: string) => Promise<ReplyMessageProps>,
+    ctx: CommandContext
+) => any | Promise<any>;
 export type CommandResponse = string | CommandHandler;
 
 /**
