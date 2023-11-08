@@ -11,7 +11,7 @@ import {
     getBlankMessage,
     getNoCommandMessage
 } from './messages';
-import type { CommandContext, CommandHandler } from './command-base';
+import type { CommandContext, CommandHandler, MessageProps } from './command-base';
 
 
 const { BOT_NAME } = process.env;
@@ -46,9 +46,22 @@ async function handleCommandResponse(
     const ctx: CommandContext = {
         ...getMessageProps(replyMessage),
         args,
-        getMessage: async (messageId: string) => {
+        getMessage: async (messageId: string): Promise<MessageProps> => {
             const message = await replyMessage.channel.messages.fetch(messageId);
-            return getMessageProps(message);
+            const messageProps = getMessageProps(message);
+            const isBotMessage = replyMessage.client.user!.id === messageProps.user.id;
+            return isBotMessage
+              ? {
+                  ...messageProps,
+                  isBotMessage: true,
+                  updateMessage: async (content: string) => {
+                    await message.edit(content);
+                  },
+                }
+              : {
+                  ...messageProps,
+                  isBotMessage: false,
+                };
         },
     };
     await commandHandler(sendReplyMessage, ctx);

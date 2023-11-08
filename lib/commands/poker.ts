@@ -4,47 +4,97 @@ import { randomInt } from '../bot-utils';
 
 /** ポーカーで遊ぶ */
 export default class Poker extends CommandBase {
+    private readonly deckPattern = new RegExp(
+      Array.from({ length: 5 })
+        .map(() => "([:[a-z]+::[a-z_]+:])")
+        .join("")
+    );
+
     constructor() {
         super();
         this.name = 'poker';
         this.description = 
             '`poker`: play poker\n' +
             'subCommand:\n' +
-            '  reload [indexes] (max 4 indexes)\n' +
+            '  reload [indexes] (max 5 indexes; if no index specified, all cards will be discarded)\n' +
             '  e.g. `!bot poker reload 0 2 4`';
     }
 
     exec(): CommandHandler {
         return async (sendMessage, ctx) => {
-            let cards: PlayingCard[];
-            if (ctx.args[0] === "reload" && ctx.referenceMessageID) {
-                const reloadTargetIndexes = ctx.args.slice(1).map((num) => parseInt(num, 10));
-                const msg = await ctx.getMessage(ctx.referenceMessageID);
-                const matchRes = msg?.content?.match(
-                    new RegExp(Array.from({length: 5}).map(() => "(\[:[a-z]+::[a-z_]+:\])").join(""))
-                );
-                if (
-                    !matchRes ||
-                    reloadTargetIndexes.length > 4 ||
-                    reloadTargetIndexes.length === 0 ||
-                    reloadTargetIndexes.some((n) => n < 0 || n > 4)
-                ) {
-                    return sendMessage("invalid reload request");
-                }
-                const prevCards = matchRes.slice(1).map(PlayingCard.fromString);
-                const reloadTargets = prevCards.filter((_, idx) => reloadTargetIndexes.includes(idx));
-                cards = prevCards.filter((_, idx) => !reloadTargetIndexes.includes(idx));
-                for (const card of PlayingCard.pickRandomCards()) {
-                    if (cards.length === 5) {
-                        break;
-                    } else if (!reloadTargets.some((prevCard) => card.isSameCard(prevCard))) {
-                        cards.push(card);
-                    }
-                }
-            } else {
-                cards = PlayingCard.pickRandomCards(5);
+            // リロードでない場合
+            if (ctx.args[0] !== "reload") {
+                return sendMessage(this.play(PlayingCard.pickRandomCards(5)));
             }
-            await sendMessage(this.play(cards));
+            // リロードの場合
+            if (!ctx.referenceMessageID) {
+                // リロード対象のメッセージが指定されていない
+                return sendMessage("no reload target was specified");
+            }
+            /** リロード対象のメッセージ */
+            const msg = await ctx.getMessage(ctx.referenceMessageID);
+            if (!msg) {
+                // リロード対象のメッセージを取得できない
+                return sendMessage("failed to get reload target");
+            } else if (!msg.isBotMessage) {
+                // リロード対象のメッセージがBOTのメッセージでない
+                return sendMessage("reload target must be message from bot");
+            }
+            /** 前回までのプレイで出たカード */
+            const decks = msg.content
+                .split("\n")
+                .map((line) => line.match(this.deckPattern))
+                .filter((matchRes): matchRes is RegExpMatchArray => matchRes !== null)
+                .map((matchRes) => matchRes.slice(1).map(PlayingCard.fromString));
+            if (decks.length === 0) {
+                // ポーカーのカードが見つからなかった
+                return sendMessage("reload target does not seam to poker message");
+            }
+            /** 引数 */
+            const args = ctx.args.slice(1);
+            /** リロード対象のカードのインデックス */
+            const reloadTargetIndexes = args.length === 0
+                ? Array.from({ length: 5 }).map((_, idx) => idx)
+                : args.map((num) => parseInt(num, 10));
+            if (
+                reloadTargetIndexes.length > 5 ||
+                reloadTargetIndexes.some((n) => n < 0 || n > 4)
+            ) {
+                // 引数が間違っている
+                return sendMessage("invalid arguments");
+            }
+            /** これまでに出た全てのカード */
+            const discardedCards: PlayingCard[] = [];
+            for (const card of decks.reduce((cards, deck) => cards.concat(deck), [])) {
+                if (!discardedCards.some((discardedCard) => card.isSameCard(discardedCard))) {
+                    discardedCards.push(card);
+                }
+            }
+            /** 残り枚数 */
+            const remainsCardsCount = 13 * 4 - discardedCards.length;
+            if (remainsCardsCount <= 0) {
+                // 全てのカードが出尽くした
+                return sendMessage("no card remained...");
+            } else if (reloadTargetIndexes.length > remainsCardsCount) {
+                // カードが足りない
+                return sendMessage([
+                    `you requested to reload ${reloadTargetIndexes.length} ${reloadTargetIndexes.length === 1 ? 'card' : 'cards'},`,
+                    `but ${remainsCardsCount} ${remainsCardsCount === 1 ? 'card' : 'cards'} remains`
+                ].join(" "));
+            }
+            /** 直前のプレイで出たカード */
+            const lastDeck = decks[decks.length - 1];
+            /** 手札 */
+            const cards = lastDeck.filter((_, idx) => !reloadTargetIndexes.includes(idx));
+            // リロード処理
+            for (const card of PlayingCard.pickRandomCards()) {
+                if (cards.length === 5) {
+                    break;
+                } else if (!discardedCards.some((discardedCard) => card.isSameCard(discardedCard))) {
+                    cards.push(card);
+                }
+            }
+            return msg.updateMessage(`${msg.content}\n:arrow_down: reload\n${this.play(cards)}`);
         };
     }
 
@@ -193,25 +243,27 @@ class PlayingCard {
     /** 
      * 指定された枚数のトランプをランダムに取得する
      * 
-     * 枚数を指定しない場合は無限にトランプを生成する
+     * 枚数を指定しない場合は52枚全てをランダムな順番で生成する
+     * 
+     * 52以上の数を指定した場合、例外を送出
      */
-    static pickRandomCards(len: number): PlayingCard[];
-    static pickRandomCards(): Iterable<PlayingCard>;
-    static pickRandomCards(len?: number) {
+    static pickRandomCards(len?: number): PlayingCard[] {
         if (len === undefined) {
-            return (function*(): Iterable<PlayingCard> {
-                while (true) {
-                    const n = randomInt(4) * 100 + randomInt(13);
-                    yield PlayingCard.createRandomCard(n);
-                }
-            })()
+            len = 52;
+        } else if (len > 52) {
+            throw new Error("too many cards requested");
         }
+        const deck = Array.from({ length: 4 })
+            .map((_, suitIdx) =>
+                Array.from({ length: 13 }).map(
+                    (_, number): [string, number] => [this.suits[suitIdx], number]
+                )
+            )
+            .reduce((cards, card) => cards.concat(card), [])
+            .map(([suit, number]) => new PlayingCard(suit, number));
         const cards: PlayingCard[] = [];
-        for (const card of PlayingCard.pickRandomCards()) {
-            if (cards.length >= len) {
-                break;
-            }
-            cards.push(card);
+        for (let n = 0; n < len; n++) {
+            cards.push(deck.splice(randomInt(deck.length), 1)[0]);
         }
         return cards;
     }
