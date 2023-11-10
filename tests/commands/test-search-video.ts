@@ -8,4 +8,6 @@ const instance = new SearchVideo();
 
     console.log(await instance.exec('ぴえん'));
 
+    console.log(await instance.exec('--unsafe', 'tri poloski'));
+
 })();

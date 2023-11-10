@@ -16,4 +16,6 @@ const instance = new SearchImage();
 
     console.log(await instance.exec('tsurutaaaaaa_', '結婚'));
 
+    console.log(await instance.exec('--unsafe', 'かのゆら'));
+
 })();
