@@ -27,12 +27,12 @@ export default class Poker extends CommandBase {
                 return sendMessage(this.play(PlayingCard.pickRandomCards(5)));
             }
             // リロードの場合
-            if (!ctx.referenceMessageID) {
+            if (!ctx.referenceMessageId) {
                 // リロード対象のメッセージが指定されていない
                 return sendMessage("no reload target was specified");
             }
             /** リロード対象のメッセージ */
-            const msg = await ctx.getMessage(ctx.referenceMessageID);
+            const msg = await ctx.getMessage(ctx.referenceMessageId);
             if (!msg) {
                 // リロード対象のメッセージを取得できない
                 return sendMessage("failed to get reload target");
@@ -179,7 +179,7 @@ export default class Poker extends CommandBase {
 class PlayingCard {
     constructor(readonly suit: string, readonly number: number) {}
 
-    static createRandomCard(num: number): PlayingCard {
+    static fromNumber(num: number): PlayingCard {
         return new PlayingCard(
             PlayingCard.suits[Math.floor(num / 100)],
             num % 100
@@ -247,10 +247,8 @@ class PlayingCard {
      * 
      * 52以上の数を指定した場合、例外を送出
      */
-    static pickRandomCards(len?: number): PlayingCard[] {
-        if (len === undefined) {
-            len = 52;
-        } else if (len > 52) {
+    static pickRandomCards(len = 52): PlayingCard[] {
+        if (len > 52) {
             throw new Error("too many cards requested");
         }
         const deck = Array.from({ length: 4 })

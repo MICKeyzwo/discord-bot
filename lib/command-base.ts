@@ -1,7 +1,7 @@
 type MessagePropsBase = {
-    readonly user: { id: string, name: string };
+    readonly user: { readonly id: string, readonly name: string };
     readonly messageId: string, 
-    readonly referenceMessageID: string | null;
+    readonly referenceMessageId: string | null;
     readonly content: string;
 };
 export type MessageProps = MessagePropsBase & (

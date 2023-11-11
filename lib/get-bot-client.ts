@@ -24,7 +24,7 @@ function getMessageProps(message: Discord.Message) {
     return {
         user: { id: message.author.id, name: message.author.username },
         messageId: message.id,
-        referenceMessageID: message.reference?.messageID ?? null,
+        referenceMessageId: message.reference?.messageID ?? null,
         content: message.content,
     }
 }
