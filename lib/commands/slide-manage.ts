@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 import { CommandBase } from '../command-base';
 
 const { SPREAD_SHEET_LINK, SPREAD_SHEET_API, SPREAD_SHEET_API_TOKEN } = process.env;

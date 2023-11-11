@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 import { objectToQueryString, isEmpty, pickUpRandom } from './bot-utils';
 
 

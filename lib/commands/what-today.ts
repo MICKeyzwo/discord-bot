@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 import { CommandBase } from '../command-base';
 import { randomInt } from '../bot-utils';
 
