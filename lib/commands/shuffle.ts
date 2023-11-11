@@ -1,4 +1,5 @@
 import { CommandBase } from '../command-base';
+import { shuffleArray } from '../bot-utils';
 
 
 /**
@@ -15,10 +16,6 @@ export default class Shuffle extends CommandBase {
         if (!args.length) {
             return '';
         }
-        for (let i = args.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * i);
-            [args[i], args[j]] = [args[j], args[i]];
-        }
-        return args.join(' ');
+        return shuffleArray(args).join(' ');
     }
 }

@@ -1,5 +1,5 @@
 import { CommandBase, type CommandHandler } from '../command-base';
-import { randomInt } from '../bot-utils';
+import { shuffleArray } from '../bot-utils';
 
 
 /** ポーカーで遊ぶ */
@@ -259,11 +259,7 @@ class PlayingCard {
             )
             .reduce((cards, card) => cards.concat(card), [])
             .map(([suit, number]) => new PlayingCard(suit, number));
-        const cards: PlayingCard[] = [];
-        for (let n = 0; n < len; n++) {
-            cards.push(deck.splice(randomInt(deck.length), 1)[0]);
-        }
-        return cards;
+        return shuffleArray(deck).slice(0, len);
     }
 
     /**

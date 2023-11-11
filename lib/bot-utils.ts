@@ -64,6 +64,21 @@ export function randomInt(n: number) {
 }
 
 /**
+ * 与えられた配列のコピーをシャッフルして返却する
+ */
+export function shuffleArray<T>(target: T[]): T[] {
+    const result = [...target];
+    if (result.length <= 1) {
+        return result;
+    }
+    for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * i);
+        [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+}
+
+/**
  * 長さが0の場合にtrueを返す
  */
 export function isEmpty(seq: { length: number }) {
