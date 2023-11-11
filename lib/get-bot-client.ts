@@ -11,7 +11,7 @@ import {
     getBlankMessage,
     getNoCommandMessage
 } from './messages';
-import type { CommandContext, CommandHandler } from './command-base';
+import type { CommandContext, CommandHandler, MessageProps } from './command-base';
 
 
 const { BOT_NAME } = process.env;
@@ -20,28 +20,51 @@ type DiscordReplyMessage = Discord.Message & {
     lineReplyNoMention(message: string): Promise<Discord.Message>;
 };
 
+function getMessageProps(message: Discord.Message) {
+    return {
+        user: { id: message.author.id, name: message.author.username },
+        messageId: message.id,
+        referenceMessageId: message.reference?.messageID ?? null,
+        content: message.content,
+    }
+}
+
 async function handleCommandResponse(
     replyMessage: DiscordReplyMessage,
-    response: CommandHandler,
-    args: string[]
+    commandHandler: CommandHandler,
+    args: string[],
 ) {
-    let messageEditor: (content: string) => Promise<void> | undefined;
-    const editMessage = async (content: string) => {
-        if (typeof messageEditor === "undefined") {
-            const msg = await replyMessage.lineReplyNoMention(content);
-            messageEditor = async (content: string) => {
+    const sendReplyMessage = async (content: string) => {
+        const msg = await replyMessage.lineReplyNoMention(content);
+        return {
+            updateReplyMessage: async (content: string) => {
                 await msg.edit(content);
-            };
-        } else {
-            await messageEditor(content);
-        }
+            },
+            replyMessageId: msg.id
+        };
     };
     const ctx: CommandContext = {
-        editMessage,
+        ...getMessageProps(replyMessage),
         args,
-        user: { id: replyMessage.author.id, name: replyMessage.author.username },
+        getMessage: async (messageId: string): Promise<MessageProps> => {
+            const message = await replyMessage.channel.messages.fetch(messageId);
+            const messageProps = getMessageProps(message);
+            const isBotMessage = replyMessage.client.user!.id === messageProps.user.id;
+            return isBotMessage
+              ? {
+                  ...messageProps,
+                  isBotMessage: true,
+                  updateMessage: async (content: string) => {
+                    await message.edit(content);
+                  },
+                }
+              : {
+                  ...messageProps,
+                  isBotMessage: false,
+                };
+        },
     };
-    await response(ctx);
+    await commandHandler(sendReplyMessage, ctx);
 }
 
 /**

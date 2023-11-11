@@ -1,9 +1,25 @@
-export type CommandContext = {
-    editMessage: (content: string) => Promise<void>;
-    args: string[];
-    user: { id: string, name: string };
+type MessagePropsBase = {
+    readonly user: { readonly id: string, readonly name: string };
+    readonly messageId: string, 
+    readonly referenceMessageId: string | null;
+    readonly content: string;
 };
-export type CommandHandler = (ctx: CommandContext) => void | Promise<void>;
+export type MessageProps = MessagePropsBase & (
+    { readonly isBotMessage: false } |
+    { readonly isBotMessage: true;　readonly updateMessage: (content: string) => Promise<void>　}
+);
+export type CommandContext = MessagePropsBase & {
+    readonly args: string[];
+    readonly getMessage: (messageId: string) => Promise<MessageProps | undefined>;
+};
+export type ReplyMessageProps = {
+    readonly updateReplyMessage: (content: string) => Promise<void>;
+    readonly replyMessageId: string;
+};
+export type CommandHandler = (
+    sendReplyMessage: (content: string) => Promise<ReplyMessageProps>,
+    ctx: CommandContext
+) => any | Promise<any>;
 export type CommandResponse = string | CommandHandler;
 
 /**
